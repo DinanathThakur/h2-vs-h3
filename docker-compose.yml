@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  http2-server:
+    build:
+      context: .
+      dockerfile: nginx/http2/Dockerfile
+    ports:
+      - "8443:443"
+    volumes:
+      - ./nginx/http2/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./web:/usr/share/nginx/html:ro
+      - ./certs:/etc/nginx/certs:ro
+      - ./scripts:/scripts:ro
+    depends_on:
+      - cert-generator
+    networks:
+      - demo-network
+    healthcheck:
+      test: ["CMD", "/scripts/health-check-http2.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  http3-server:
+    build:
+      context: .
+      dockerfile: nginx/http3/Dockerfile
+    ports:
+      - "8444:443"
+      - "8444:443/udp"  # QUIC/UDP port
+    volumes:
+      - ./nginx/http3/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./web:/usr/share/nginx/html:ro
+      - ./certs:/etc/nginx/certs:ro
+      - ./scripts:/scripts:ro
+    depends_on:
+      - cert-generator
+    networks:
+      - demo-network
+    healthcheck:
+      test: ["CMD", "/scripts/health-check-http3.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  cert-generator:
+    image: alpine:latest
+    volumes:
+      - ./certs:/certs
+      - ./scripts:/scripts:ro
+    command: /scripts/generate-certs.sh
+    networks:
+      - demo-network
+
+networks:
+  demo-network:
+    driver: bridge

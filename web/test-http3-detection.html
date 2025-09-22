@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP/3 Detection Test</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+        
+        .status-good { color: #28a745; font-weight: bold; }
+        .status-warning { color: #ffc107; font-weight: bold; }
+        .status-error { color: #dc3545; font-weight: bold; }
+        
+        .code-block {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 4px;
+            font-family: monospace;
+            margin: 0.5rem 0;
+            white-space: pre-wrap;
+        }
+        
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0.25rem;
+        }
+        
+        .test-button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>HTTP/3 Detection and Testing</h1>
+        
+        <div class="test-section">
+            <h3>Server Response Headers</h3>
+            <button class="test-button" onclick="checkServerHeaders()">Check Headers</button>
+            <div id="headerResults" class="code-block" style="display: none;"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Browser HTTP/3 Support</h3>
+            <div id="browserSupport">
+                <p>Browser: <span id="browserName"></span></p>
+                <p>HTTP/3 Support: <span id="http3Support"></span></p>
+                <p>QUIC Support: <span id="quicSupport"></span></p>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Connection Information</h3>
+            <button class="test-button" onclick="testConnections()">Test Both Servers</button>
+            <div id="connectionResults"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Network Tab Instructions</h3>
+            <div>
+                <h4>How to verify HTTP/3 in browser:</h4>
+                <ol>
+                    <li><strong>Chrome:</strong> Open DevTools → Network → Look for "h3" in Protocol column</li>
+                    <li><strong>Firefox:</strong> Open DevTools → Network → Right-click headers → Enable "Protocol"</li>
+                    <li><strong>Check Alt-Svc:</strong> Look for "Alt-Svc" header in response headers</li>
+                    <li><strong>Multiple visits:</strong> HTTP/3 may only activate after first visit</li>
+                </ol>
+                
+                <h4>Why you might see HTTP/2:</h4>
+                <ul>
+                    <li>First visit to the site (browser learning about HTTP/3)</li>
+                    <li>Browser doesn't support HTTP/3 fully</li>
+                    <li>Network blocks UDP traffic (corporate firewalls)</li>
+                    <li>Browser falls back due to connection issues</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Force HTTP/3 Test</h3>
+            <p>This test will try to detect if HTTP/3 is actually being used:</p>
+            <button class="test-button" onclick="performanceTest()">Run Performance Test</button>
+            <div id="performanceResults"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Server Status Endpoints</h3>
+            <button class="test-button" onclick="checkServerStatus()">Check Server Status</button>
+            <div id="statusResults"></div>
+        </div>
+    </div>
+
+    <script>
+        // Detect browser and HTTP/3 support
+        function detectBrowserSupport() {
+            const ua = navigator.userAgent;
+            let browser = 'Unknown';
+            let version = 'Unknown';
+            let http3Support = 'Unknown';
+            let quicSupport = 'Unknown';
+
+            // Browser detection
+            if (ua.includes('Chrome/') && !ua.includes('Edg/')) {
+                browser = 'Chrome';
+                version = ua.match(/Chrome\/(\d+)/)?.[1] || 'Unknown';
+                http3Support = parseInt(version) >= 87 ? 'Supported' : 'Not Supported';
+                quicSupport = parseInt(version) >= 87 ? 'Supported' : 'Not Supported';
+            } else if (ua.includes('Firefox/')) {
+                browser = 'Firefox';
+                version = ua.match(/Firefox\/(\d+)/)?.[1] || 'Unknown';
+                http3Support = parseInt(version) >= 88 ? 'Supported (may need enabling)' : 'Not Supported';
+                quicSupport = parseInt(version) >= 88 ? 'Supported' : 'Not Supported';
+            } else if (ua.includes('Safari/') && !ua.includes('Chrome/')) {
+                browser = 'Safari';
+                version = ua.match(/Version\/(\d+)/)?.[1] || 'Unknown';
+                http3Support = 'Limited Support';
+                quicSupport = 'Limited Support';
+            } else if (ua.includes('Edg/')) {
+                browser = 'Edge';
+                version = ua.match(/Edg\/(\d+)/)?.[1] || 'Unknown';
+                http3Support = parseInt(version) >= 87 ? 'Supported' : 'Not Supported';
+                quicSupport = parseInt(version) >= 87 ? 'Supported' : 'Not Supported';
+            }
+
+            document.getElementById('browserName').textContent = `${browser} ${version}`;
+            document.getElementById('http3Support').innerHTML = `<span class="${getStatusClass(http3Support)}">${http3Support}</span>`;
+            document.getElementById('quicSupport').innerHTML = `<span class="${getStatusClass(quicSupport)}">${quicSupport}</span>`;
+        }
+
+        function getStatusClass(status) {
+            if (status.includes('Supported') && !status.includes('Limited')) return 'status-good';
+            if (status.includes('Limited') || status.includes('may need')) return 'status-warning';
+            return 'status-error';
+        }
+
+        async function checkServerHeaders() {
+            const results = document.getElementById('headerResults');
+            results.style.display = 'block';
+            results.textContent = 'Checking headers...';
+
+            try {
+                const response = await fetch('https://localhost:8444/', { method: 'HEAD' });
+                const headers = {};
+                for (let [key, value] of response.headers.entries()) {
+                    headers[key] = value;
+                }
+
+                let output = 'Response Headers from HTTP/3 server (port 8444):\n\n';
+                output += `Status: ${response.status}\n`;
+                output += `Alt-Svc: ${headers['alt-svc'] || 'Not present'}\n`;
+                output += `X-Protocol: ${headers['x-protocol'] || 'Not present'}\n`;
+                output += `Server: ${headers['server'] || 'Not present'}\n`;
+                output += `QUIC-Status: ${headers['quic-status'] || 'Not present'}\n\n`;
+                
+                output += 'All Headers:\n';
+                Object.entries(headers).forEach(([key, value]) => {
+                    output += `${key}: ${value}\n`;
+                });
+
+                results.textContent = output;
+            } catch (error) {
+                results.textContent = `Error: ${error.message}`;
+            }
+        }
+
+        async function testConnections() {
+            const results = document.getElementById('connectionResults');
+            results.innerHTML = '<p>Testing connections...</p>';
+
+            try {
+                // Test HTTP/2 server
+                const http2Start = performance.now();
+                const http2Response = await fetch('https://localhost:8443/');
+                const http2End = performance.now();
+                const http2Time = http2End - http2Start;
+
+                // Test HTTP/3 server
+                const http3Start = performance.now();
+                const http3Response = await fetch('https://localhost:8444/');
+                const http3End = performance.now();
+                const http3Time = http3End - http3Start;
+
+                let output = '<div class="code-block">';
+                output += `HTTP/2 Server (port 8443):\n`;
+                output += `  Status: ${http2Response.status}\n`;
+                output += `  Time: ${http2Time.toFixed(2)}ms\n`;
+                output += `  Protocol Header: ${http2Response.headers.get('x-protocol')}\n\n`;
+                
+                output += `HTTP/3 Server (port 8444):\n`;
+                output += `  Status: ${http3Response.status}\n`;
+                output += `  Time: ${http3Time.toFixed(2)}ms\n`;
+                output += `  Protocol Header: ${http3Response.headers.get('x-protocol')}\n`;
+                output += `  Alt-Svc: ${http3Response.headers.get('alt-svc')}\n`;
+                output += '</div>';
+
+                results.innerHTML = output;
+            } catch (error) {
+                results.innerHTML = `<p class="status-error">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function performanceTest() {
+            const results = document.getElementById('performanceResults');
+            results.innerHTML = '<p>Running performance test...</p>';
+
+            const testRuns = 5;
+            const http2Times = [];
+            const http3Times = [];
+
+            try {
+                // Test HTTP/2 multiple times
+                for (let i = 0; i < testRuns; i++) {
+                    const start = performance.now();
+                    await fetch('https://localhost:8443/');
+                    const end = performance.now();
+                    http2Times.push(end - start);
+                }
+
+                // Test HTTP/3 multiple times
+                for (let i = 0; i < testRuns; i++) {
+                    const start = performance.now();
+                    await fetch('https://localhost:8444/');
+                    const end = performance.now();
+                    http3Times.push(end - start);
+                }
+
+                const http2Avg = http2Times.reduce((a, b) => a + b, 0) / http2Times.length;
+                const http3Avg = http3Times.reduce((a, b) => a + b, 0) / http3Times.length;
+
+                let output = '<div class="code-block">';
+                output += `Performance Test Results (${testRuns} runs each):\n\n`;
+                output += `HTTP/2 Average: ${http2Avg.toFixed(2)}ms\n`;
+                output += `HTTP/3 Average: ${http3Avg.toFixed(2)}ms\n`;
+                output += `Difference: ${(http2Avg - http3Avg).toFixed(2)}ms\n\n`;
+                
+                if (http3Avg < http2Avg) {
+                    output += '✅ HTTP/3 appears to be faster (may indicate it\'s working)\n';
+                } else {
+                    output += '⚠️ HTTP/2 appears faster (HTTP/3 may not be active)\n';
+                }
+                
+                output += '\nNote: Performance differences may be minimal on localhost.\n';
+                output += 'Real HTTP/3 benefits are more apparent over network connections.';
+                output += '</div>';
+
+                results.innerHTML = output;
+            } catch (error) {
+                results.innerHTML = `<p class="status-error">Error: ${error.message}</p>`;
+            }
+        }
+
+        async function checkServerStatus() {
+            const results = document.getElementById('statusResults');
+            results.innerHTML = '<p>Checking server status...</p>';
+
+            try {
+                const statusResponse = await fetch('https://localhost:8444/status');
+                const statusData = await statusResponse.json();
+
+                const quicResponse = await fetch('https://localhost:8444/quic-info');
+                const quicData = await quicResponse.json();
+
+                let output = '<div class="code-block">';
+                output += 'Server Status:\n';
+                output += JSON.stringify(statusData, null, 2);
+                output += '\n\nQUIC Info:\n';
+                output += JSON.stringify(quicData, null, 2);
+                output += '</div>';
+
+                results.innerHTML = output;
+            } catch (error) {
+                results.innerHTML = `<p class="status-error">Error: ${error.message}</p>`;
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            detectBrowserSupport();
+        });
+    </script>
+</body>
+</html>

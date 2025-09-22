@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Simulation Test - HTTP/2 vs HTTP/3</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .test-content {
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .resource-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        
+        .resource-item {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            border: 2px solid #e9ecef;
+        }
+        
+        .resource-item img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .loading-test {
+            margin: 2rem 0;
+            padding: 1rem;
+            background: #e3f2fd;
+            border-radius: 8px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .connection-info {
+            background: #f1f8e9;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .performance-metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        
+        .metric-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2196f3;
+            display: block;
+            margin: 0.5rem 0;
+        }
+        
+        .metric-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-content">
+        <h1>Network Simulation Test Page</h1>
+        
+        <div class="connection-info">
+            <h3>Connection Information</h3>
+            <p><strong>Protocol:</strong> <span id="protocolInfo">Detecting...</span></p>
+            <p><strong>Load Time:</strong> <span id="loadTimeInfo">Measuring...</span></p>
+            <p><strong>Connection Type:</strong> <span id="connectionType">Unknown</span></p>
+        </div>
+        
+        <div class="loading-test">
+            <h3>Resource Loading Test</h3>
+            <p>This page loads multiple resources to test multiplexing and connection handling under various network conditions.</p>
+            <div id="loadingProgress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+                <p id="progressText">Starting...</p>
+            </div>
+        </div>
+        
+        <div class="performance-metrics">
+            <div class="metric-card">
+                <span class="metric-value" id="resourceCount">0</span>
+                <span class="metric-label">Resources Loaded</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-value" id="totalSize">0 KB</span>
+                <span class="metric-label">Total Size</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-value" id="avgLatency">0 ms</span>
+                <span class="metric-label">Average Latency</span>
+            </div>
+            <div class="metric-card">
+                <span class="metric-value" id="connectionTime">0 ms</span>
+                <span class="metric-label">Connection Time</span>
+            </div>
+        </div>
+        
+        <div class="resource-grid">
+            <!-- Small images for multiplexing test -->
+            <div class="resource-item">
+                <img src="resources/images/small-1.svg" alt="Resource 1" onload="updateResourceCount()">
+                <p>Image 1</p>
+            </div>
+            <div class="resource-item">
+                <img src="resources/images/small-2.svg" alt="Resource 2" onload="updateResourceCount()">
+                <p>Image 2</p>
+            </div>
+            <div class="resource-item">
+                <img src="resources/images/small-3.svg" alt="Resource 3" onload="updateResourceCount()">
+                <p>Image 3</p>
+            </div>
+            <div class="resource-item">
+                <img src="resources/images/small-4.svg" alt="Resource 4" onload="updateResourceCount()">
+                <p>Image 4</p>
+            </div>
+            <div class="resource-item">
+                <img src="resources/images/small-5.svg" alt="Resource 5" onload="updateResourceCount()">
+                <p>Image 5</p>
+            </div>
+            <div class="resource-item">
+                <img src="resources/images/small-6.svg" alt="Resource 6" onload="updateResourceCount()">
+                <p>Image 6</p>
+            </div>
+            <div class="resource-item">
+                <img src="resources/images/small-7.svg" alt="Resource 7" onload="updateResourceCount()">
+                <p>Image 7</p>
+            </div>
+            <div class="resource-item">
+                <img src="resources/images/small-8.svg" alt="Resource 8" onload="updateResourceCount()">
+                <p>Image 8</p>
+            </div>
+            <div class="resource-item">
+                <img src="resources/images/small-9.svg" alt="Resource 9" onload="updateResourceCount()">
+                <p>Image 9</p>
+            </div>
+            <div class="resource-item">
+                <img src="resources/images/small-10.svg" alt="Resource 10" onload="updateResourceCount()">
+                <p>Image 10</p>
+            </div>
+        </div>
+        
+        <div class="loading-test">
+            <h3>Additional Resources</h3>
+            <p>Loading CSS and JavaScript resources to test different content types:</p>
+            <ul id="additionalResources">
+                <li>CSS: <span id="cssStatus">Loading...</span></li>
+                <li>JavaScript: <span id="jsStatus">Loading...</span></li>
+                <li>JSON Data: <span id="jsonStatus">Loading...</span></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Load additional resources for testing -->
+    <link rel="stylesheet" href="resources/css/small.css" onload="updateResourceStatus('css', 'Loaded')">
+    <link rel="stylesheet" href="resources/css/medium.css" onload="updateResourceStatus('css', 'Loaded')">
+    <link rel="stylesheet" href="resources/css/large.css" onload="updateResourceStatus('css', 'Loaded')">
+    
+    <script>
+        // Page load timing
+        const pageStartTime = performance.now();
+        let resourcesLoaded = 0;
+        const totalResources = 13; // 10 images + 3 CSS files
+        
+        // Detect protocol
+        function detectProtocol() {
+            const protocol = location.protocol === 'https:' ? 'HTTPS' : 'HTTP';
+            const port = location.port;
+            let protocolVersion = 'HTTP/1.1';
+            
+            if (port === '8443') {
+                protocolVersion = 'HTTP/2';
+            } else if (port === '8444') {
+                protocolVersion = 'HTTP/3';
+            }
+            
+            document.getElementById('protocolInfo').textContent = `${protocolVersion} over ${protocol}`;
+            return protocolVersion;
+        }
+        
+        // Update resource count
+        function updateResourceCount() {
+            resourcesLoaded++;
+            document.getElementById('resourceCount').textContent = resourcesLoaded;
+            
+            const progress = (resourcesLoaded / totalResources) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+            document.getElementById('progressText').textContent = `Loaded ${resourcesLoaded}/${totalResources} resources (${progress.toFixed(1)}%)`;
+            
+            if (resourcesLoaded === totalResources) {
+                const loadTime = performance.now() - pageStartTime;
+                document.getElementById('loadTimeInfo').textContent = `${loadTime.toFixed(0)}ms`;
+                document.getElementById('progressText').textContent = 'All resources loaded!';
+                
+                // Calculate additional metrics
+                calculateMetrics();
+            }
+        }
+        
+        // Update resource status
+        function updateResourceStatus(type, status) {
+            const element = document.getElementById(`${type}Status`);
+            if (element) {
+                element.textContent = status;
+                element.style.color = status === 'Loaded' ? '#4caf50' : '#f44336';
+            }
+        }
+        
+        // Calculate performance metrics
+        function calculateMetrics() {
+            if (performance.getEntriesByType) {
+                const resources = performance.getEntriesByType('resource');
+                const navigation = performance.getEntriesByType('navigation')[0];
+                
+                // Calculate total size
+                let totalSize = 0;
+                let totalLatency = 0;
+                
+                resources.forEach(resource => {
+                    totalSize += resource.transferSize || resource.encodedBodySize || 0;
+                    totalLatency += resource.duration;
+                });
+                
+                document.getElementById('totalSize').textContent = `${(totalSize / 1024).toFixed(1)} KB`;
+                document.getElementById('avgLatency').textContent = `${(totalLatency / resources.length).toFixed(0)} ms`;
+                
+                if (navigation) {
+                    const connectionTime = navigation.connectEnd - navigation.connectStart;
+                    document.getElementById('connectionTime').textContent = `${connectionTime.toFixed(0)} ms`;
+                }
+            }
+        }
+        
+        // Detect connection type
+        function detectConnectionType() {
+            if (navigator.connection) {
+                const connection = navigator.connection;
+                const type = connection.effectiveType || connection.type || 'unknown';
+                const downlink = connection.downlink ? `${connection.downlink} Mbps` : '';
+                const rtt = connection.rtt ? `${connection.rtt}ms RTT` : '';
+                
+                document.getElementById('connectionType').textContent = `${type} ${downlink} ${rtt}`.trim();
+            } else {
+                document.getElementById('connectionType').textContent = 'Connection API not supported';
+            }
+        }
+        
+        // Send performance data to parent window
+        function sendPerformanceData() {
+            const data = {
+                type: 'pageLoaded',
+                loadTime: performance.now() - pageStartTime,
+                resourceCount: resourcesLoaded,
+                protocol: detectProtocol(),
+                timestamp: Date.now()
+            };
+            
+            if (window.parent !== window) {
+                window.parent.postMessage(data, '*');
+            }
+        }
+        
+        // Initialize page
+        window.addEventListener('load', () => {
+            detectProtocol();
+            detectConnectionType();
+            
+            // Send data after a short delay to ensure all resources are counted
+            setTimeout(sendPerformanceData, 1000);
+        });
+        
+        // Load additional JavaScript resources
+        const jsResources = [
+            'resources/js/small.js',
+            'resources/js/medium.js',
+            'resources/js/large.js'
+        ];
+        
+        jsResources.forEach((src, index) => {
+            const script = document.createElement('script');
+            script.src = src;
+            script.onload = () => {
+                if (index === jsResources.length - 1) {
+                    updateResourceStatus('js', 'Loaded');
+                }
+            };
+            script.onerror = () => updateResourceStatus('js', 'Error');
+            document.head.appendChild(script);
+        });
+        
+        // Load JSON data
+        fetch('test-data.json')
+            .then(response => response.json())
+            .then(data => {
+                updateResourceStatus('json', 'Loaded');
+                console.log('JSON data loaded:', data);
+            })
+            .catch(error => {
+                updateResourceStatus('json', 'Error');
+                console.error('JSON load error:', error);
+            });
+    </script>
+</body>
+</html>

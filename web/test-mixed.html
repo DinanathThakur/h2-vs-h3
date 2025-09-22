@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mixed Resources Test Page</title>
+    <link rel="stylesheet" href="test-styles.css">
+</head>
+<body>
+    <div class="test-content">
+        <h1>Mixed Resources Test Page</h1>
+        <p>This test loads various resource types to demonstrate comprehensive protocol performance.</p>
+        
+        <div class="stats" id="stats">
+            <h3>Resource Loading</h3>
+            <div class="resource-list" id="resourceList">
+                <!-- Resources will be listed here -->
+            </div>
+        </div>
+
+        <div class="content-sections">
+            <section class="text-section">
+                <h2>Text Content</h2>
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+            </section>
+            
+            <section class="image-section">
+                <h2>Images</h2>
+                <div class="image-placeholder">Sample Image</div>
+            </section>
+        </div>
+    </div>
+
+    <script src="test-script.js"></script>
+    <script>
+        // Track resource loading
+        let resources = [];
+        let startTime = performance.now();
+
+        function trackResource(name, type, size = 0) {
+            resources.push({
+                name,
+                type,
+                loadTime: performance.now() - startTime,
+                size
+            });
+            updateResourceList();
+        }
+
+        function updateResourceList() {
+            const list = document.getElementById('resourceList');
+            list.innerHTML = resources.map(r => 
+                `<div class="resource-item">${r.name} (${r.type}) - ${Math.round(r.loadTime)}ms</div>`
+            ).join('');
+        }
+
+        // Signal completion
+        window.addEventListener('load', function() {
+            const totalTime = performance.now() - startTime;
+            
+            if (window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'pageLoaded',
+                    loadTime: totalTime,
+                    resourceCount: resources.length,
+                    resources: resources,
+                    url: location.href
+                }, '*');
+            }
+        });
+
+        // Track initial resources
+        trackResource('HTML Document', 'document');
+        trackResource('CSS Stylesheet', 'stylesheet');
+    </script>
+</body>
+</html>

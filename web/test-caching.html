@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caching Test - Cacheable vs Non-Cacheable Resources</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 2rem 0;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+        .resource-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .resource-item {
+            padding: 1rem;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .cache-status {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .cache-hit {
+            background: #d4edda;
+            color: #155724;
+        }
+        .cache-miss {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .cache-unknown {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .stats {
+            background: #e7f3ff;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+        .test-buttons {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .loading {
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-content">
+        <h1>HTTP Caching Behavior Test</h1>
+        <p>This test demonstrates how HTTP/2 and HTTP/3 handle cacheable vs non-cacheable resources, and the impact on performance.</p>
+        
+        <div class="stats">
+            <h3>Test Statistics</h3>
+            <p><strong>Protocol:</strong> <span id="protocol">Detecting...</span></p>
+            <p><strong>Test Runs:</strong> <span id="testRuns">0</span></p>
+            <p><strong>Last Run Time:</strong> <span id="lastRunTime">-</span></p>
+            <p><strong>Cache Hit Rate:</strong> <span id="cacheHitRate">-</span></p>
+        </div>
+
+        <div class="test-buttons">
+            <button class="btn btn-primary" onclick="runCacheTest()">Run Cache Test</button>
+            <button class="btn btn-secondary" onclick="clearCacheAndTest()">Clear Cache & Test</button>
+            <button class="btn btn-secondary" onclick="resetStats()">Reset Statistics</button>
+        </div>
+
+        <div class="test-section">
+            <h2>Cacheable Resources</h2>
+            <p>These resources are served with cache headers allowing browser caching:</p>
+            <div class="resource-list" id="cacheableResources">
+                <!-- Cacheable resources will be listed here -->
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Non-Cacheable Resources</h2>
+            <p>These resources are served with no-cache headers or cache-busting parameters:</p>
+            <div class="resource-list" id="nonCacheableResources">
+                <!-- Non-cacheable resources will be listed here -->
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Caching Benefits</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <div>
+                    <h3>HTTP/2 Caching</h3>
+                    <ul>
+                        <li>Efficient cache validation with ETags</li>
+                        <li>Conditional requests reduce bandwidth</li>
+                        <li>Server push can populate cache</li>
+                        <li>Multiplexing reduces cache miss impact</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>HTTP/3 Caching</h3>
+                    <ul>
+                        <li>Same caching semantics as HTTP/2</li>
+                        <li>Faster cache validation due to QUIC</li>
+                        <li>Reduced connection setup for cache misses</li>
+                        <li>Better performance on mobile networks</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>Test Results</h2>
+            <div id="testResults">
+                <p>Run a test to see results...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const cacheableResources = [
+            { name: 'Small CSS (Cacheable)', url: 'resources/css/small.css', type: 'css' },
+            { name: 'Small JS (Cacheable)', url: 'resources/js/small.js', type: 'js' },
+            { name: 'Small Image (Cacheable)', url: 'resources/images/small-1.svg', type: 'image' }
+        ];
+
+        const nonCacheableResources = [
+            { name: 'Medium CSS (No-Cache)', url: 'resources/css/medium.css', type: 'css', noCache: true },
+            { name: 'Medium JS (No-Cache)', url: 'resources/js/medium.js', type: 'js', noCache: true },
+            { name: 'Small Image (No-Cache)', url: 'resources/images/small-2.svg', type: 'image', noCache: true }
+        ];
+
+        let testRuns = 0;
+        let testResults = [];
+
+        function detectProtocol() {
+            const protocol = location.protocol === 'https:' ? 'HTTPS' : 'HTTP';
+            document.getElementById('protocol').textContent = protocol;
+        }
+
+        function initializeResourceLists() {
+            const cacheableContainer = document.getElementById('cacheableResources');
+            const nonCacheableContainer = document.getElementById('nonCacheableResources');
+
+            cacheableResources.forEach((resource, index) => {
+                const item = createResourceItem(resource, `cacheable-${index}`);
+                cacheableContainer.appendChild(item);
+            });
+
+            nonCacheableResources.forEach((resource, index) => {
+                const item = createResourceItem(resource, `noncacheable-${index}`);
+                nonCacheableContainer.appendChild(item);
+            });
+        }
+
+        function createResourceItem(resource, id) {
+            const item = document.createElement('div');
+            item.className = 'resource-item';
+            item.id = id;
+            item.innerHTML = `
+                <h4>${resource.name}</h4>
+                <p><strong>Type:</strong> ${resource.type.toUpperCase()}</p>
+                <p><strong>Cache Status:</strong> <span class="cache-status cache-unknown" id="${id}-status">Not Tested</span></p>
+                <p><strong>Load Time:</strong> <span id="${id}-time">-</span></p>
+                <p><strong>Size:</strong> <span id="${id}-size">-</span></p>
+            `;
+            return item;
+        }
+
+        async function runCacheTest() {
+            const startTime = performance.now();
+            testRuns++;
+            
+            document.getElementById('testRuns').textContent = testRuns;
+            
+            // Clear previous results
+            const allItems = document.querySelectorAll('.resource-item');
+            allItems.forEach(item => item.classList.add('loading'));
+
+            const testResult = {
+                run: testRuns,
+                timestamp: new Date().toISOString(),
+                cacheable: [],
+                nonCacheable: []
+            };
+
+            // Test cacheable resources
+            for (let i = 0; i < cacheableResources.length; i++) {
+                const resource = cacheableResources[i];
+                const result = await testResource(resource, `cacheable-${i}`, false);
+                testResult.cacheable.push(result);
+            }
+
+            // Test non-cacheable resources
+            for (let i = 0; i < nonCacheableResources.length; i++) {
+                const resource = nonCacheableResources[i];
+                const result = await testResource(resource, `noncacheable-${i}`, true);
+                testResult.nonCacheable.push(result);
+            }
+
+            const totalTime = performance.now() - startTime;
+            document.getElementById('lastRunTime').textContent = Math.round(totalTime) + 'ms';
+
+            testResults.push(testResult);
+            updateCacheHitRate();
+            displayTestResults();
+
+            // Remove loading state
+            allItems.forEach(item => item.classList.remove('loading'));
+
+            // Signal completion to parent frame
+            if (window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'pageLoaded',
+                    testType: 'caching',
+                    loadTime: totalTime,
+                    testRuns: testRuns,
+                    cacheHitRate: calculateCacheHitRate(),
+                    url: location.href
+                }, '*');
+            }
+        }
+
+        async function testResource(resource, elementId, bustCache) {
+            const startTime = performance.now();
+            let url = resource.url;
+            
+            if (bustCache || resource.noCache) {
+                url += '?t=' + Date.now() + '&nocache=1';
+            }
+
+            try {
+                let loadResult;
+                if (resource.type === 'css') {
+                    loadResult = await loadCSS(url);
+                } else if (resource.type === 'js') {
+                    loadResult = await loadJS(url);
+                } else if (resource.type === 'image') {
+                    loadResult = await loadImage(url);
+                }
+
+                const loadTime = performance.now() - startTime;
+                const cacheStatus = determineCacheStatus(loadTime, testRuns);
+
+                updateResourceDisplay(elementId, loadTime, cacheStatus, loadResult.size);
+
+                return {
+                    resource: resource.name,
+                    loadTime,
+                    cacheStatus,
+                    size: loadResult.size || 0
+                };
+            } catch (error) {
+                updateResourceDisplay(elementId, 0, 'error', 0);
+                return {
+                    resource: resource.name,
+                    loadTime: 0,
+                    cacheStatus: 'error',
+                    size: 0
+                };
+            }
+        }
+
+        function loadCSS(url) {
+            return new Promise((resolve, reject) => {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = url;
+                
+                link.onload = () => resolve({ size: 'Unknown' });
+                link.onerror = reject;
+                
+                document.head.appendChild(link);
+            });
+        }
+
+        function loadJS(url) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = url;
+                
+                script.onload = () => resolve({ size: 'Unknown' });
+                script.onerror = reject;
+                
+                document.head.appendChild(script);
+            });
+        }
+
+        function loadImage(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve({ size: `${img.width}x${img.height}` });
+                img.onerror = reject;
+                img.src = url;
+            });
+        }
+
+        function determineCacheStatus(loadTime, runNumber) {
+            if (runNumber === 1) {
+                return 'miss'; // First run is always a cache miss
+            }
+            
+            // Simple heuristic: if load time is significantly faster, likely a cache hit
+            return loadTime < 50 ? 'hit' : 'miss';
+        }
+
+        function updateResourceDisplay(elementId, loadTime, cacheStatus, size) {
+            const statusElement = document.getElementById(`${elementId}-status`);
+            const timeElement = document.getElementById(`${elementId}-time`);
+            const sizeElement = document.getElementById(`${elementId}-size`);
+
+            timeElement.textContent = Math.round(loadTime) + 'ms';
+            sizeElement.textContent = size;
+
+            statusElement.className = 'cache-status';
+            if (cacheStatus === 'hit') {
+                statusElement.classList.add('cache-hit');
+                statusElement.textContent = 'Cache Hit';
+            } else if (cacheStatus === 'miss') {
+                statusElement.classList.add('cache-miss');
+                statusElement.textContent = 'Cache Miss';
+            } else {
+                statusElement.classList.add('cache-unknown');
+                statusElement.textContent = 'Error';
+            }
+        }
+
+        function calculateCacheHitRate() {
+            if (testResults.length === 0) return 0;
+            
+            let totalTests = 0;
+            let cacheHits = 0;
+            
+            testResults.forEach(result => {
+                result.cacheable.forEach(r => {
+                    totalTests++;
+                    if (r.cacheStatus === 'hit') cacheHits++;
+                });
+                result.nonCacheable.forEach(r => {
+                    totalTests++;
+                    if (r.cacheStatus === 'hit') cacheHits++;
+                });
+            });
+            
+            return totalTests > 0 ? (cacheHits / totalTests * 100) : 0;
+        }
+
+        function updateCacheHitRate() {
+            const hitRate = calculateCacheHitRate();
+            document.getElementById('cacheHitRate').textContent = hitRate.toFixed(1) + '%';
+        }
+
+        function displayTestResults() {
+            const resultsContainer = document.getElementById('testResults');
+            
+            if (testResults.length === 0) {
+                resultsContainer.innerHTML = '<p>No test results yet.</p>';
+                return;
+            }
+
+            const latestResult = testResults[testResults.length - 1];
+            
+            let html = `
+                <h3>Latest Test Results (Run #${latestResult.run})</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <div>
+                        <h4>Cacheable Resources</h4>
+                        ${latestResult.cacheable.map(r => `
+                            <p><strong>${r.resource}:</strong> ${Math.round(r.loadTime)}ms (${r.cacheStatus})</p>
+                        `).join('')}
+                    </div>
+                    <div>
+                        <h4>Non-Cacheable Resources</h4>
+                        ${latestResult.nonCacheable.map(r => `
+                            <p><strong>${r.resource}:</strong> ${Math.round(r.loadTime)}ms (${r.cacheStatus})</p>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            if (testResults.length > 1) {
+                const avgCacheableTime = latestResult.cacheable.reduce((sum, r) => sum + r.loadTime, 0) / latestResult.cacheable.length;
+                const avgNonCacheableTime = latestResult.nonCacheable.reduce((sum, r) => sum + r.loadTime, 0) / latestResult.nonCacheable.length;
+                
+                html += `
+                    <h4>Performance Comparison</h4>
+                    <p><strong>Average Cacheable Load Time:</strong> ${Math.round(avgCacheableTime)}ms</p>
+                    <p><strong>Average Non-Cacheable Load Time:</strong> ${Math.round(avgNonCacheableTime)}ms</p>
+                    <p><strong>Cache Benefit:</strong> ${avgNonCacheableTime > avgCacheableTime ? 
+                        Math.round(((avgNonCacheableTime - avgCacheableTime) / avgNonCacheableTime) * 100) + '% faster' : 
+                        'No significant benefit'}</p>
+                `;
+            }
+
+            resultsContainer.innerHTML = html;
+        }
+
+        async function clearCacheAndTest() {
+            // We can't actually clear the browser cache, but we can bust it
+            alert('Note: This will use cache-busting parameters to simulate cleared cache.');
+            await runCacheTest();
+        }
+
+        function resetStats() {
+            testRuns = 0;
+            testResults = [];
+            document.getElementById('testRuns').textContent = '0';
+            document.getElementById('lastRunTime').textContent = '-';
+            document.getElementById('cacheHitRate').textContent = '-';
+            document.getElementById('testResults').innerHTML = '<p>Run a test to see results...</p>';
+            
+            // Reset all resource displays
+            const statusElements = document.querySelectorAll('.cache-status');
+            statusElements.forEach(el => {
+                el.className = 'cache-status cache-unknown';
+                el.textContent = 'Not Tested';
+            });
+            
+            const timeElements = document.querySelectorAll('[id$="-time"]');
+            timeElements.forEach(el => el.textContent = '-');
+            
+            const sizeElements = document.querySelectorAll('[id$="-size"]');
+            sizeElements.forEach(el => el.textContent = '-');
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            detectProtocol();
+            initializeResourceLists();
+        });
+    </script>
+</body>
+</html>

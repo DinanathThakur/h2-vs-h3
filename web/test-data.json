@@ -1,0 +1,46 @@
+{
+  "testData": {
+    "version": "1.0",
+    "timestamp": "2024-01-01T00:00:00Z",
+    "protocols": {
+      "http2": {
+        "features": ["multiplexing", "header_compression", "server_push", "binary_protocol"],
+        "performance": {
+          "connection_reuse": true,
+          "head_of_line_blocking": "tcp_level"
+        }
+      },
+      "http3": {
+        "features": ["quic_transport", "connection_migration", "built_in_encryption", "stream_multiplexing"],
+        "performance": {
+          "connection_reuse": true,
+          "head_of_line_blocking": "eliminated"
+        }
+      }
+    },
+    "test_scenarios": [
+      {
+        "name": "basic",
+        "description": "Basic page load test",
+        "resource_count": 3
+      },
+      {
+        "name": "images",
+        "description": "Multiple image loading test",
+        "resource_count": 10
+      },
+      {
+        "name": "mixed",
+        "description": "Mixed resource types test",
+        "resource_count": 6
+      }
+    ],
+    "metrics": {
+      "load_time": "Total page load time in milliseconds",
+      "connection_time": "Time to establish connection",
+      "first_byte_time": "Time to first byte received",
+      "resource_count": "Number of resources loaded",
+      "total_size": "Total size of all resources"
+    }
+  }
+}

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplexing Test - Multiple Small Resources</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        .image-container {
+            text-align: center;
+            padding: 1rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #fafafa;
+        }
+        .image-container img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+        }
+        .load-time {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+        .stats {
+            background: #e7f3ff;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+        .loading {
+            opacity: 0.5;
+        }
+        .loaded {
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-content">
+        <h1>HTTP/2 vs HTTP/3 Multiplexing Test</h1>
+        <p>This test loads 10 small images simultaneously to demonstrate the multiplexing capabilities of HTTP/2 and HTTP/3 protocols.</p>
+        
+        <div class="stats">
+            <h3>Loading Statistics</h3>
+            <p><strong>Protocol:</strong> <span id="protocol">Detecting...</span></p>
+            <p><strong>Total Images:</strong> <span id="totalImages">10</span></p>
+            <p><strong>Loaded:</strong> <span id="loadedCount">0</span></p>
+            <p><strong>Total Load Time:</strong> <span id="totalLoadTime">Measuring...</span></p>
+            <p><strong>Average per Image:</strong> <span id="avgLoadTime">-</span></p>
+            <p><strong>Fastest Image:</strong> <span id="fastestTime">-</span></p>
+            <p><strong>Slowest Image:</strong> <span id="slowestTime">-</span></p>
+        </div>
+
+        <div class="image-grid" id="imageGrid">
+            <!-- Images will be loaded here -->
+        </div>
+
+        <h2>Multiplexing Benefits</h2>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin: 2rem 0;">
+            <div>
+                <h3>HTTP/2 Multiplexing</h3>
+                <ul>
+                    <li>Multiple requests over single TCP connection</li>
+                    <li>Eliminates head-of-line blocking at HTTP level</li>
+                    <li>Binary framing for efficient parsing</li>
+                    <li>Stream prioritization support</li>
+                </ul>
+            </div>
+            <div>
+                <h3>HTTP/3 Multiplexing</h3>
+                <ul>
+                    <li>Multiple streams over QUIC connection</li>
+                    <li>Eliminates head-of-line blocking completely</li>
+                    <li>Independent stream processing</li>
+                    <li>Better performance on lossy networks</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let loadedCount = 0;
+        let loadTimes = [];
+        let startTime = performance.now();
+        const totalImages = 10;
+
+        function detectProtocol() {
+            // Basic protocol detection
+            const protocol = location.protocol === 'https:' ? 'HTTPS' : 'HTTP';
+            document.getElementById('protocol').textContent = protocol;
+            
+            // Try to detect HTTP version (limited in browsers)
+            if (navigator.connection && navigator.connection.effectiveType) {
+                document.getElementById('protocol').textContent += ` (${navigator.connection.effectiveType})`;
+            }
+        }
+
+        function createImageContainers() {
+            const grid = document.getElementById('imageGrid');
+            
+            for (let i = 1; i <= totalImages; i++) {
+                const container = document.createElement('div');
+                container.className = 'image-container loading';
+                container.innerHTML = `
+                    <div>Loading Image ${i}...</div>
+                    <div class="load-time" id="time-${i}">-</div>
+                `;
+                container.id = `container-${i}`;
+                grid.appendChild(container);
+                
+                // Start loading image immediately
+                loadImage(i);
+            }
+        }
+
+        function loadImage(index) {
+            const imageStartTime = performance.now();
+            const img = new Image();
+            
+            img.onload = function() {
+                const loadTime = performance.now() - imageStartTime;
+                loadTimes.push(loadTime);
+                loadedCount++;
+                
+                const container = document.getElementById(`container-${index}`);
+                container.className = 'image-container loaded';
+                container.innerHTML = `
+                    <img src="${img.src}" alt="Test Image ${index}">
+                    <div class="load-time">${Math.round(loadTime)}ms</div>
+                `;
+                
+                updateStats();
+                
+                if (loadedCount === totalImages) {
+                    onAllImagesLoaded();
+                }
+            };
+            
+            img.onerror = function() {
+                const container = document.getElementById(`container-${index}`);
+                container.innerHTML = `
+                    <div style="color: red;">Failed to load Image ${index}</div>
+                    <div class="load-time">Error</div>
+                `;
+                loadedCount++;
+                updateStats();
+            };
+            
+            // Load the actual image
+            img.src = `resources/images/small-${index}.svg?t=${Date.now()}`;
+        }
+
+        function updateStats() {
+            document.getElementById('loadedCount').textContent = loadedCount;
+            
+            if (loadTimes.length > 0) {
+                const avgTime = loadTimes.reduce((a, b) => a + b, 0) / loadTimes.length;
+                const fastestTime = Math.min(...loadTimes);
+                const slowestTime = Math.max(...loadTimes);
+                
+                document.getElementById('avgLoadTime').textContent = Math.round(avgTime) + 'ms';
+                document.getElementById('fastestTime').textContent = Math.round(fastestTime) + 'ms';
+                document.getElementById('slowestTime').textContent = Math.round(slowestTime) + 'ms';
+            }
+        }
+
+        function onAllImagesLoaded() {
+            const totalTime = performance.now() - startTime;
+            document.getElementById('totalLoadTime').textContent = Math.round(totalTime) + 'ms';
+            
+            // Signal completion to parent frame
+            if (window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'pageLoaded',
+                    testType: 'multiplexing',
+                    loadTime: totalTime,
+                    resourceCount: totalImages,
+                    avgResourceTime: loadTimes.reduce((a, b) => a + b, 0) / loadTimes.length,
+                    fastestResource: Math.min(...loadTimes),
+                    slowestResource: Math.max(...loadTimes),
+                    url: location.href
+                }, '*');
+            }
+            
+            console.log('Multiplexing test completed:', {
+                totalTime: Math.round(totalTime),
+                avgTime: Math.round(loadTimes.reduce((a, b) => a + b, 0) / loadTimes.length),
+                loadTimes: loadTimes.map(t => Math.round(t))
+            });
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            detectProtocol();
+            createImageContainers();
+        });
+    </script>
+</body>
+</html>

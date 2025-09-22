@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTTP/2 vs HTTP/3 Demo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header class="header">
+        <h1>HTTP/2 vs HTTP/3 Performance Demo</h1>
+        <div class="browser-compatibility" id="browserCompatibility">
+            <span class="compatibility-indicator" id="compatibilityIndicator"></span>
+            <span class="compatibility-text" id="compatibilityText"></span>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Educational Content Section -->
+        <section class="info-section">
+            <div class="protocol-info">
+                <div class="protocol-card http2">
+                    <h3>HTTP/2</h3>
+                    <ul>
+                        <li>Multiplexing over single TCP connection</li>
+                        <li>Header compression (HPACK)</li>
+                        <li>Server push capability</li>
+                        <li>Binary protocol</li>
+                    </ul>
+                </div>
+                <div class="protocol-card http3">
+                    <h3>HTTP/3</h3>
+                    <ul>
+                        <li>QUIC transport protocol (UDP-based)</li>
+                        <li>Built-in encryption</li>
+                        <li>Connection migration</li>
+                        <li>Reduced head-of-line blocking</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Performance Comparison Section -->
+        <section class="comparison-section">
+            <h2>Live Performance Comparison</h2>
+            
+            <div class="controls">
+                <button id="startTest" class="btn btn-primary">Start Performance Test</button>
+                <button id="resetTest" class="btn btn-secondary">Reset</button>
+                <select id="testScenario" class="scenario-select">
+                    <option value="basic">Basic Page Load</option>
+                    <option value="images">Multiple Images</option>
+                    <option value="mixed">Mixed Resources</option>
+                    <option value="network-simulation">Network Simulation Test</option>
+                </select>
+            </div>
+            
+            <div class="advanced-controls">
+                <button id="exportResults" class="btn btn-outline">Export Results</button>
+                <input type="file" id="importResults" accept=".json" style="display: none;">
+                <button id="importResultsBtn" class="btn btn-outline">Import Results</button>
+                <button id="runMultipleTests" class="btn btn-outline">Run 5 Tests</button>
+            </div>
+
+            <div class="comparison-container">
+                <div class="protocol-section">
+                    <div class="protocol-header">
+                        <h3>HTTP/2</h3>
+                        <div class="status-indicator" id="http2Status">
+                            <span class="status-dot"></span>
+                            <span class="status-text">Ready</span>
+                        </div>
+                    </div>
+                    <div class="iframe-container">
+                        <iframe id="http2Frame" src="about:blank" title="HTTP/2 Demo"></iframe>
+                        <div class="loading-overlay" id="http2Loading">
+                            <div class="spinner"></div>
+                            <span>Loading...</span>
+                        </div>
+                    </div>
+                    <div class="metrics" id="http2Metrics">
+                        <div class="metric">
+                            <span class="metric-label" data-tooltip="Total time from request start to page completion">Load Time:</span>
+                            <span class="metric-value" id="http2LoadTime">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label" data-tooltip="Time to establish the initial connection (TCP + TLS handshakes)">Connection:</span>
+                            <span class="metric-value" id="http2Connection">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label" data-tooltip="Time to First Byte - when the first response data arrives">First Byte:</span>
+                            <span class="metric-value" id="http2FirstByte">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Resources:</span>
+                            <span class="metric-value" id="http2ResourceCount">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Total Size:</span>
+                            <span class="metric-value" id="http2TotalSize">-</span>
+                        </div>
+                    </div>
+                    <div id="http2Progress"></div>
+                </div>
+
+                <div class="protocol-section">
+                    <div class="protocol-header">
+                        <h3>HTTP/3</h3>
+                        <div class="status-indicator" id="http3Status">
+                            <span class="status-dot"></span>
+                            <span class="status-text">Ready</span>
+                        </div>
+                    </div>
+                    <div class="iframe-container">
+                        <iframe id="http3Frame" src="about:blank" title="HTTP/3 Demo"></iframe>
+                        <div class="loading-overlay" id="http3Loading">
+                            <div class="spinner"></div>
+                            <span>Loading...</span>
+                        </div>
+                    </div>
+                    <div class="metrics" id="http3Metrics">
+                        <div class="metric">
+                            <span class="metric-label" data-tooltip="Total time from request start to page completion">Load Time:</span>
+                            <span class="metric-value" id="http3LoadTime">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label" data-tooltip="Time to establish QUIC connection (combined transport + crypto handshake)">Connection:</span>
+                            <span class="metric-value" id="http3Connection">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label" data-tooltip="Time to First Byte - when the first response data arrives">First Byte:</span>
+                            <span class="metric-value" id="http3FirstByte">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Resources:</span>
+                            <span class="metric-value" id="http3ResourceCount">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Total Size:</span>
+                            <span class="metric-value" id="http3TotalSize">-</span>
+                        </div>
+                    </div>
+                    <div id="http3Progress"></div>
+                </div>
+            </div>
+
+            <!-- Results Summary -->
+            <div class="results-summary" id="resultsSummary" style="display: none;">
+                <h3>Test Results</h3>
+                <div class="summary-content" id="summaryContent"></div>
+            </div>
+        </section>
+
+        <!-- Educational Content -->
+        <section class="education-section">
+            <h2>Understanding HTTP/2 vs HTTP/3</h2>
+            
+            <!-- Protocol Overview -->
+            <div class="protocol-overview">
+                <div class="overview-card">
+                    <h3>HTTP/2: The TCP Evolution</h3>
+                    <p>HTTP/2, standardized in 2015, revolutionized web performance by introducing multiplexing over a single TCP connection. Built on top of the reliable TCP protocol, it addressed many HTTP/1.1 limitations while maintaining compatibility with existing infrastructure.</p>
+                    <div class="key-features">
+                        <h4>Key Features:</h4>
+                        <ul>
+                            <li><strong>Binary Protocol:</strong> More efficient parsing and reduced errors</li>
+                            <li><strong>Multiplexing:</strong> Multiple requests over single connection</li>
+                            <li><strong>Header Compression:</strong> HPACK reduces overhead</li>
+                            <li><strong>Server Push:</strong> Proactive resource delivery</li>
+                            <li><strong>Stream Prioritization:</strong> Control resource loading order</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="overview-card">
+                    <h3>HTTP/3: The QUIC Revolution</h3>
+                    <p>HTTP/3, standardized in 2022, represents a fundamental shift by moving from TCP to QUIC (Quick UDP Internet Connections). This UDP-based protocol eliminates many TCP limitations while providing built-in security and improved performance.</p>
+                    <div class="key-features">
+                        <h4>Key Features:</h4>
+                        <ul>
+                            <li><strong>QUIC Transport:</strong> UDP-based with reliability built-in</li>
+                            <li><strong>0-RTT Handshake:</strong> Faster connection establishment</li>
+                            <li><strong>Connection Migration:</strong> Survive network changes</li>
+                            <li><strong>Stream Independence:</strong> No head-of-line blocking</li>
+                            <li><strong>Built-in Encryption:</strong> TLS 1.3 integrated</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Comparison -->
+            <div class="interactive-comparison">
+                <h3>Interactive Protocol Comparison</h3>
+                <div class="comparison-tabs">
+                    <button class="tab-button active" data-tab="handshake">Connection Handshake</button>
+                    <button class="tab-button" data-tab="multiplexing">Multiplexing</button>
+                    <button class="tab-button" data-tab="migration">Connection Migration</button>
+                    <button class="tab-button" data-tab="security">Security</button>
+                </div>
+                
+                <div class="tab-content active" id="handshake">
+                    <div class="comparison-visual">
+                        <div class="protocol-flow">
+                            <h4>HTTP/2 Connection (3-4 RTT)</h4>
+                            <div class="flow-steps">
+                                <div class="step">1. TCP SYN</div>
+                                <div class="step">2. TCP SYN-ACK</div>
+                                <div class="step">3. TCP ACK</div>
+                                <div class="step">4. TLS ClientHello</div>
+                                <div class="step">5. TLS ServerHello</div>
+                                <div class="step">6. TLS Finished</div>
+                                <div class="step">7. HTTP/2 Request</div>
+                            </div>
+                        </div>
+                        <div class="protocol-flow">
+                            <h4>HTTP/3 Connection (1-2 RTT)</h4>
+                            <div class="flow-steps">
+                                <div class="step highlight">1. QUIC Initial + TLS ClientHello</div>
+                                <div class="step highlight">2. QUIC Handshake + TLS ServerHello</div>
+                                <div class="step highlight">3. HTTP/3 Request (0-RTT possible)</div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="explanation">HTTP/3's QUIC protocol combines transport and cryptographic handshakes, reducing connection establishment time by up to 50%.</p>
+                </div>
+                
+                <div class="tab-content" id="multiplexing">
+                    <div class="comparison-visual">
+                        <div class="protocol-flow">
+                            <h4>HTTP/2 Multiplexing</h4>
+                            <div class="multiplexing-demo">
+                                <div class="tcp-connection">
+                                    <div class="stream blocked">Stream 1 (blocked)</div>
+                                    <div class="stream waiting">Stream 2 (waiting)</div>
+                                    <div class="stream waiting">Stream 3 (waiting)</div>
+                                </div>
+                                <p class="issue">TCP head-of-line blocking affects all streams</p>
+                            </div>
+                        </div>
+                        <div class="protocol-flow">
+                            <h4>HTTP/3 Multiplexing</h4>
+                            <div class="multiplexing-demo">
+                                <div class="quic-connection">
+                                    <div class="stream blocked">Stream 1 (blocked)</div>
+                                    <div class="stream active">Stream 2 (active)</div>
+                                    <div class="stream active">Stream 3 (active)</div>
+                                </div>
+                                <p class="benefit">Independent streams, no blocking</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="explanation">QUIC's stream independence means packet loss in one stream doesn't block others, improving performance on lossy networks.</p>
+                </div>
+                
+                <div class="tab-content" id="migration">
+                    <div class="comparison-visual">
+                        <div class="protocol-flow">
+                            <h4>HTTP/2 Network Change</h4>
+                            <div class="migration-demo">
+                                <div class="network-change">
+                                    <div class="connection broken">Connection Lost</div>
+                                    <div class="reconnect">Full Reconnection Required</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="protocol-flow">
+                            <h4>HTTP/3 Network Change</h4>
+                            <div class="migration-demo">
+                                <div class="network-change">
+                                    <div class="connection migrated">Connection Migrated</div>
+                                    <div class="continue">Seamless Continuation</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="explanation">HTTP/3 uses connection IDs instead of IP addresses, allowing connections to survive network changes like switching from WiFi to cellular.</p>
+                </div>
+                
+                <div class="tab-content" id="security">
+                    <div class="comparison-visual">
+                        <div class="protocol-flow">
+                            <h4>HTTP/2 Security</h4>
+                            <div class="security-layers">
+                                <div class="layer">HTTP/2 Application Layer</div>
+                                <div class="layer">TLS 1.2/1.3 Security Layer</div>
+                                <div class="layer">TCP Transport Layer</div>
+                            </div>
+                        </div>
+                        <div class="protocol-flow">
+                            <h4>HTTP/3 Security</h4>
+                            <div class="security-layers">
+                                <div class="layer">HTTP/3 Application Layer</div>
+                                <div class="layer integrated">QUIC + TLS 1.3 Integrated</div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="explanation">HTTP/3 integrates TLS 1.3 directly into QUIC, providing mandatory encryption and reducing attack surface.</p>
+                </div>
+            </div>
+
+            <!-- Performance Metrics Explanation -->
+            <div class="metrics-explanation">
+                <h3>Understanding Performance Metrics</h3>
+                <div class="metrics-grid">
+                    <div class="metric-explanation">
+                        <h4>Load Time</h4>
+                        <p>Total time from request initiation to page completion. HTTP/3 typically shows improvements due to faster connection establishment and reduced head-of-line blocking.</p>
+                        <div class="metric-factors">
+                            <strong>Factors affecting load time:</strong>
+                            <ul>
+                                <li>Connection establishment overhead</li>
+                                <li>Network latency and packet loss</li>
+                                <li>Resource size and count</li>
+                                <li>Server processing time</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-explanation">
+                        <h4>Connection Time</h4>
+                        <p>Time to establish the initial connection. HTTP/3's combined QUIC+TLS handshake typically reduces this by 1-2 round trips compared to HTTP/2's separate TCP+TLS handshakes.</p>
+                        <div class="metric-factors">
+                            <strong>Connection establishment:</strong>
+                            <ul>
+                                <li>HTTP/2: TCP (1 RTT) + TLS (1-2 RTT)</li>
+                                <li>HTTP/3: QUIC+TLS (1 RTT, 0-RTT possible)</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-explanation">
+                        <h4>First Byte Time (TTFB)</h4>
+                        <p>Time until the first byte of response data arrives. HTTP/3 often shows improvements due to faster connection setup and better congestion control.</p>
+                        <div class="metric-factors">
+                            <strong>TTFB components:</strong>
+                            <ul>
+                                <li>DNS resolution time</li>
+                                <li>Connection establishment</li>
+                                <li>Request transmission</li>
+                                <li>Server processing</li>
+                                <li>Response start transmission</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-explanation">
+                        <h4>Resource Count & Size</h4>
+                        <p>Number and total size of resources loaded. HTTP/3's improved multiplexing and stream independence make it more efficient with many small resources.</p>
+                        <div class="metric-factors">
+                            <strong>Resource loading benefits:</strong>
+                            <ul>
+                                <li>Better multiplexing efficiency</li>
+                                <li>No head-of-line blocking</li>
+                                <li>Improved prioritization</li>
+                                <li>Reduced connection overhead</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QUIC Benefits Deep Dive -->
+            <div class="quic-benefits">
+                <h3>QUIC Protocol Benefits</h3>
+                <div class="benefits-grid">
+                    <div class="benefit-card interactive" data-benefit="0rtt">
+                        <div class="benefit-icon">⚡</div>
+                        <h4>0-RTT Connection Resumption</h4>
+                        <p>Resume previous connections instantly without handshake overhead.</p>
+                        <button class="learn-more-btn" onclick="toggleBenefitDetails('0rtt')">Learn More</button>
+                        <div class="benefit-details" id="0rtt-details">
+                            <p>QUIC can resume connections from previous sessions using cached parameters, allowing immediate data transmission. This is particularly beneficial for repeat visits and mobile scenarios where connections are frequently re-established.</p>
+                            <div class="code-example">
+                                <strong>Typical savings:</strong> 1-2 RTT reduction on connection resumption
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="benefit-card interactive" data-benefit="migration">
+                        <div class="benefit-icon">🔄</div>
+                        <h4>Connection Migration</h4>
+                        <p>Maintain connections across network changes seamlessly.</p>
+                        <button class="learn-more-btn" onclick="toggleBenefitDetails('migration')">Learn More</button>
+                        <div class="benefit-details" id="migration-details">
+                            <p>QUIC connections are identified by connection IDs rather than IP addresses, allowing them to survive network interface changes. This is crucial for mobile users switching between WiFi and cellular networks.</p>
+                            <div class="code-example">
+                                <strong>Use cases:</strong> Mobile networks, load balancing, network failover
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="benefit-card interactive" data-benefit="congestion">
+                        <div class="benefit-icon">📊</div>
+                        <h4>Advanced Congestion Control</h4>
+                        <p>Better network utilization with modern congestion algorithms.</p>
+                        <button class="learn-more-btn" onclick="toggleBenefitDetails('congestion')">Learn More</button>
+                        <div class="benefit-details" id="congestion-details">
+                            <p>QUIC implements modern congestion control algorithms like BBR and Cubic, providing better throughput and fairness compared to traditional TCP congestion control.</p>
+                            <div class="code-example">
+                                <strong>Benefits:</strong> Better bandwidth utilization, reduced bufferbloat, faster recovery
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="benefit-card interactive" data-benefit="security">
+                        <div class="benefit-icon">🔒</div>
+                        <h4>Integrated Security</h4>
+                        <p>TLS 1.3 built into the transport layer for mandatory encryption.</p>
+                        <button class="learn-more-btn" onclick="toggleBenefitDetails('security')">Learn More</button>
+                        <div class="benefit-details" id="security-details">
+                            <p>QUIC mandates encryption for all connections, integrating TLS 1.3 directly into the transport protocol. This eliminates cleartext transmission and reduces the attack surface.</p>
+                            <div class="code-example">
+                                <strong>Security features:</strong> Mandatory encryption, connection ID privacy, improved key rotation
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Real-World Scenarios -->
+            <div class="scenarios-section">
+                <h3>Real-World Performance Scenarios</h3>
+                <div class="scenarios-grid">
+                    <div class="scenario-card">
+                        <h4>🏠 Home WiFi (Low Latency)</h4>
+                        <div class="scenario-metrics">
+                            <div class="metric-comparison">
+                                <span class="protocol">HTTP/2:</span>
+                                <span class="performance good">Good performance</span>
+                            </div>
+                            <div class="metric-comparison">
+                                <span class="protocol">HTTP/3:</span>
+                                <span class="performance better">5-15% faster</span>
+                            </div>
+                        </div>
+                        <p>On low-latency connections, HTTP/3 shows modest improvements mainly from faster connection establishment.</p>
+                    </div>
+                    
+                    <div class="scenario-card">
+                        <h4>📱 Mobile Network (High Latency)</h4>
+                        <div class="scenario-metrics">
+                            <div class="metric-comparison">
+                                <span class="protocol">HTTP/2:</span>
+                                <span class="performance poor">Affected by latency</span>
+                            </div>
+                            <div class="metric-comparison">
+                                <span class="protocol">HTTP/3:</span>
+                                <span class="performance much-better">20-40% faster</span>
+                            </div>
+                        </div>
+                        <p>High-latency networks benefit significantly from HTTP/3's reduced handshake overhead and better loss recovery.</p>
+                    </div>
+                    
+                    <div class="scenario-card">
+                        <h4>🌐 Lossy Network (Packet Loss)</h4>
+                        <div class="scenario-metrics">
+                            <div class="metric-comparison">
+                                <span class="protocol">HTTP/2:</span>
+                                <span class="performance poor">Head-of-line blocking</span>
+                            </div>
+                            <div class="metric-comparison">
+                                <span class="protocol">HTTP/3:</span>
+                                <span class="performance much-better">30-50% faster</span>
+                            </div>
+                        </div>
+                        <p>Networks with packet loss see the biggest HTTP/3 improvements due to independent stream recovery.</p>
+                    </div>
+                    
+                    <div class="scenario-card">
+                        <h4>🔄 Frequent Reconnections</h4>
+                        <div class="scenario-metrics">
+                            <div class="metric-comparison">
+                                <span class="protocol">HTTP/2:</span>
+                                <span class="performance poor">Full handshake each time</span>
+                            </div>
+                            <div class="metric-comparison">
+                                <span class="protocol">HTTP/3:</span>
+                                <span class="performance much-better">0-RTT resumption</span>
+                            </div>
+                        </div>
+                        <p>Mobile users and applications with frequent reconnections benefit greatly from QUIC's connection resumption.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Protocol Specifications</h4>
+                <ul>
+                    <li><a href="https://tools.ietf.org/html/rfc7540" target="_blank" rel="noopener">HTTP/2 RFC 7540</a></li>
+                    <li><a href="https://tools.ietf.org/html/rfc9114" target="_blank" rel="noopener">HTTP/3 RFC 9114</a></li>
+                    <li><a href="https://tools.ietf.org/html/rfc9000" target="_blank" rel="noopener">QUIC RFC 9000</a></li>
+                    <li><a href="https://tools.ietf.org/html/rfc7541" target="_blank" rel="noopener">HPACK RFC 7541</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Implementation Guides</h4>
+                <ul>
+                    <li><a href="https://developers.google.com/web/fundamentals/performance/http2" target="_blank" rel="noopener">Google HTTP/2 Guide</a></li>
+                    <li><a href="https://blog.cloudflare.com/http3-the-past-present-and-future/" target="_blank" rel="noopener">Cloudflare HTTP/3 Overview</a></li>
+                    <li><a href="https://quicwg.org/" target="_blank" rel="noopener">QUIC Working Group</a></li>
+                    <li><a href="https://nginx.org/en/docs/http/ngx_http_v3_module.html" target="_blank" rel="noopener">nginx HTTP/3 Module</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Browser Support</h4>
+                <ul>
+                    <li><a href="https://caniuse.com/http2" target="_blank" rel="noopener">HTTP/2 Browser Support</a></li>
+                    <li><a href="https://caniuse.com/http3" target="_blank" rel="noopener">HTTP/3 Browser Support</a></li>
+                    <li><a href="https://www.chromium.org/quic/" target="_blank" rel="noopener">Chromium QUIC</a></li>
+                    <li><a href="https://wiki.mozilla.org/Networking/http3" target="_blank" rel="noopener">Firefox HTTP/3</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-section">
+                <h4>Performance Resources</h4>
+                <ul>
+                    <li><a href="https://web.dev/performance/" target="_blank" rel="noopener">Web.dev Performance</a></li>
+                    <li><a href="https://httparchive.org/" target="_blank" rel="noopener">HTTP Archive</a></li>
+                    <li><a href="https://www.webpagetest.org/" target="_blank" rel="noopener">WebPageTest</a></li>
+                    <li><a href="https://github.com/http2/http2-spec" target="_blank" rel="noopener">HTTP/2 Spec Repository</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; 2024 HTTP/2 vs HTTP/3 Demo. Educational purposes only.</p>
+            <p>This demo uses self-signed certificates for local development. Not suitable for production use.</p>
+        </div>
+    </footer>
+
+    <script src="js/compatibility.js"></script>
+    <script src="js/performance.js"></script>
+    <script src="js/network-simulation.js"></script>
+    <script src="js/demo.js"></script>
+    <script src="js/education.js"></script>
+</body>
+</html>

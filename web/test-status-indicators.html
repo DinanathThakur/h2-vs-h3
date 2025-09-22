@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Status Indicators Test</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+        
+        .test-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 1rem 0;
+            padding: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0.25rem;
+        }
+        
+        .test-button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Status Indicators Test</h1>
+        
+        <div class="test-section">
+            <h3>Protocol Status Indicators</h3>
+            
+            <div class="test-row">
+                <span>HTTP/2 Status (Ready):</span>
+                <div class="status-indicator">
+                    <span class="status-dot ready"></span>
+                    <span class="status-text">Ready</span>
+                </div>
+            </div>
+            
+            <div class="test-row">
+                <span>HTTP/3 Status (Loading):</span>
+                <div class="status-indicator">
+                    <span class="status-dot loading"></span>
+                    <span class="status-text">Loading...</span>
+                </div>
+            </div>
+            
+            <div class="test-row">
+                <span>Connection Status (Active):</span>
+                <div class="status-indicator">
+                    <span class="status-dot active"></span>
+                    <span class="status-text">Active</span>
+                </div>
+            </div>
+            
+            <div class="test-row">
+                <span>Error Status:</span>
+                <div class="status-indicator">
+                    <span class="status-dot error"></span>
+                    <span class="status-text">Connection Error</span>
+                </div>
+            </div>
+            
+            <div class="test-row">
+                <span>Connecting Status:</span>
+                <div class="status-indicator">
+                    <span class="status-dot connecting"></span>
+                    <span class="status-text">Connecting...</span>
+                </div>
+            </div>
+            
+            <div class="test-row">
+                <span>Testing Status:</span>
+                <div class="status-indicator">
+                    <span class="status-dot testing"></span>
+                    <span class="status-text">Running Test...</span>
+                </div>
+            </div>
+            
+            <div class="test-row">
+                <span>Warning Status:</span>
+                <div class="status-indicator">
+                    <span class="status-dot warning"></span>
+                    <span class="status-text">Limited Support</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Browser Compatibility Indicators</h3>
+            
+            <div class="test-row">
+                <span>Full Support:</span>
+                <div class="browser-compatibility">
+                    <span class="compatibility-indicator supported"></span>
+                    <span class="compatibility-text">Full support (Chrome 87)</span>
+                </div>
+            </div>
+            
+            <div class="test-row">
+                <span>Partial Support:</span>
+                <div class="browser-compatibility">
+                    <span class="compatibility-indicator partial"></span>
+                    <span class="compatibility-text">HTTP/2 only (Safari 14)</span>
+                </div>
+            </div>
+            
+            <div class="test-row">
+                <span>No Support:</span>
+                <div class="browser-compatibility">
+                    <span class="compatibility-indicator not-supported"></span>
+                    <span class="compatibility-text">Limited support (Old Browser)</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Interactive Test</h3>
+            <p>Click buttons to change status indicators:</p>
+            
+            <div class="test-row">
+                <span>Test Indicator:</span>
+                <div class="status-indicator" id="testIndicator">
+                    <span class="status-dot" id="testDot"></span>
+                    <span class="status-text" id="testText">Default</span>
+                </div>
+            </div>
+            
+            <div>
+                <button class="test-button" onclick="setStatus('ready', 'Ready')">Ready</button>
+                <button class="test-button" onclick="setStatus('loading', 'Loading...')">Loading</button>
+                <button class="test-button" onclick="setStatus('active', 'Active')">Active</button>
+                <button class="test-button" onclick="setStatus('error', 'Error')">Error</button>
+                <button class="test-button" onclick="setStatus('connecting', 'Connecting...')">Connecting</button>
+                <button class="test-button" onclick="setStatus('testing', 'Testing...')">Testing</button>
+                <button class="test-button" onclick="setStatus('warning', 'Warning')">Warning</button>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Size Comparison</h3>
+            <p>Different sizes to test visibility:</p>
+            
+            <div class="test-row">
+                <span>Small (10px):</span>
+                <div class="status-indicator">
+                    <span class="status-dot ready" style="width: 10px; height: 10px;"></span>
+                    <span class="status-text">Small</span>
+                </div>
+            </div>
+            
+            <div class="test-row">
+                <span>Default (12px):</span>
+                <div class="status-indicator">
+                    <span class="status-dot ready"></span>
+                    <span class="status-text">Default</span>
+                </div>
+            </div>
+            
+            <div class="test-row">
+                <span>Large (16px):</span>
+                <div class="status-indicator">
+                    <span class="status-dot ready" style="width: 16px; height: 16px;"></span>
+                    <span class="status-text">Large</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function setStatus(status, text) {
+            const dot = document.getElementById('testDot');
+            const textElement = document.getElementById('testText');
+            
+            if (dot) {
+                dot.className = `status-dot ${status}`;
+            }
+            if (textElement) {
+                textElement.textContent = text;
+            }
+        }
+        
+        // Initialize with ready state
+        setStatus('ready', 'Ready');
+        
+        // Auto-cycle through states for demo
+        let currentState = 0;
+        const states = [
+            ['ready', 'Ready'],
+            ['loading', 'Loading...'],
+            ['active', 'Active'],
+            ['connecting', 'Connecting...'],
+            ['testing', 'Testing...'],
+            ['warning', 'Warning'],
+            ['error', 'Error']
+        ];
+        
+        setInterval(() => {
+            const [status, text] = states[currentState];
+            setStatus(status, text);
+            currentState = (currentState + 1) % states.length;
+        }, 2000);
+    </script>
+</body>
+</html>

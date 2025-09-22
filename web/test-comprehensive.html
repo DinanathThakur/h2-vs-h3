@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Protocol Test - All Resource Types</title>
+    <link rel="stylesheet" href="resources/css/small.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 1.5rem;
+            background: #fafafa;
+        }
+        .resource-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem;
+            margin: 0.5rem 0;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #eee;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ccc;
+        }
+        .status-loading {
+            background: #ffc107;
+            animation: pulse 1s infinite;
+        }
+        .status-loaded {
+            background: #28a745;
+        }
+        .status-error {
+            background: #dc3545;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .stats-dashboard {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            display: block;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 0.5rem;
+            margin: 1rem 0;
+        }
+        .image-item {
+            text-align: center;
+            padding: 0.5rem;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .image-item img {
+            max-width: 100%;
+            height: auto;
+        }
+        .progress-section {
+            margin: 2rem 0;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #007bff, #0056b3);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.5rem;
+        }
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-content">
+        <h1>Comprehensive HTTP/2 vs HTTP/3 Test Suite</h1>
+        <p>This comprehensive test loads various resource types and sizes to provide a complete comparison of HTTP/2 and HTTP/3 performance characteristics.</p>
+        
+        <div class="stats-dashboard">
+            <h2>Real-Time Performance Dashboard</h2>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-value" id="totalResources">0</span>
+                    <span class="stat-label">Total Resources</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="loadedResources">0</span>
+                    <span class="stat-label">Loaded</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="totalTime">0ms</span>
+                    <span class="stat-label">Total Time</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="avgTime">0ms</span>
+                    <span class="stat-label">Avg per Resource</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="protocol">HTTP</span>
+                    <span class="stat-label">Protocol</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-value" id="efficiency">0%</span>
+                    <span class="stat-label">Efficiency</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-section">
+            <h3>Loading Progress</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="overallProgress"></div>
+            </div>
+            <p>Overall Progress: <span id="progressText">0%</span></p>
+        </div>
+
+        <div style="text-align: center; margin: 2rem 0;">
+            <button class="btn btn-primary" onclick="startComprehensiveTest()" id="startBtn">Start Comprehensive Test</button>
+            <button class="btn btn-success" onclick="runSequentialTest()" id="sequentialBtn">Run Sequential Test</button>
+            <button class="btn btn-success" onclick="resetTest()" id="resetBtn">Reset Test</button>
+        </div>
+
+        <div class="test-grid">
+            <div class="test-section">
+                <h3>CSS Resources</h3>
+                <div id="cssResources">
+                    <!-- CSS resources will be listed here -->
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3>JavaScript Resources</h3>
+                <div id="jsResources">
+                    <!-- JS resources will be listed here -->
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3>Image Resources</h3>
+                <div class="image-gallery" id="imageResources">
+                    <!-- Images will be displayed here -->
+                </div>
+            </div>
+
+            <div class="test-section">
+                <h3>Performance Metrics</h3>
+                <div id="performanceMetrics">
+                    <p>Start a test to see detailed metrics...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section" style="margin-top: 2rem;">
+            <h2>Test Results Analysis</h2>
+            <div id="testAnalysis">
+                <p>Complete a test to see analysis...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const testResources = {
+            css: [
+                { name: 'Small CSS', url: 'resources/css/small.css', size: '~1KB' },
+                { name: 'Medium CSS', url: 'resources/css/medium.css', size: '~5KB' },
+                { name: 'Large CSS', url: 'resources/css/large.css', size: '~15KB' }
+            ],
+            js: [
+                { name: 'Small JS', url: 'resources/js/small.js', size: '~1KB' },
+                { name: 'Medium JS', url: 'resources/js/medium.js', size: '~5KB' },
+                { name: 'Large JS', url: 'resources/js/large.js', size: '~15KB' }
+            ],
+            images: [
+                { name: 'Image 1', url: 'resources/images/small-1.svg' },
+                { name: 'Image 2', url: 'resources/images/small-2.svg' },
+                { name: 'Image 3', url: 'resources/images/small-3.svg' },
+                { name: 'Image 4', url: 'resources/images/small-4.svg' },
+                { name: 'Image 5', url: 'resources/images/small-5.svg' },
+                { name: 'Image 6', url: 'resources/images/small-6.svg' },
+                { name: 'Image 7', url: 'resources/images/small-7.svg' },
+                { name: 'Image 8', url: 'resources/images/small-8.svg' }
+            ]
+        };
+
+        let testState = {
+            totalResources: 0,
+            loadedResources: 0,
+            startTime: 0,
+            loadTimes: [],
+            isRunning: false
+        };
+
+        function initializeTest() {
+            detectProtocol();
+            setupResourceDisplays();
+            updateStats();
+        }
+
+        function detectProtocol() {
+            const protocol = location.protocol === 'https:' ? 'HTTPS' : 'HTTP';
+            document.getElementById('protocol').textContent = protocol;
+        }
+
+        function setupResourceDisplays() {
+            setupCSSResources();
+            setupJSResources();
+            setupImageResources();
+            
+            testState.totalResources = testResources.css.length + testResources.js.length + testResources.images.length;
+            document.getElementById('totalResources').textContent = testState.totalResources;
+        }
+
+        function setupCSSResources() {
+            const container = document.getElementById('cssResources');
+            testResources.css.forEach((resource, index) => {
+                const item = createResourceItem(resource, `css-${index}`);
+                container.appendChild(item);
+            });
+        }
+
+        function setupJSResources() {
+            const container = document.getElementById('jsResources');
+            testResources.js.forEach((resource, index) => {
+                const item = createResourceItem(resource, `js-${index}`);
+                container.appendChild(item);
+            });
+        }
+
+        function setupImageResources() {
+            const container = document.getElementById('imageResources');
+            testResources.images.forEach((resource, index) => {
+                const item = document.createElement('div');
+                item.className = 'image-item';
+                item.id = `image-${index}`;
+                item.innerHTML = `
+                    <div class="status-indicator" id="image-${index}-status"></div>
+                    <div style="font-size: 0.8rem; margin-top: 0.5rem;">${resource.name}</div>
+                    <div style="font-size: 0.7rem; color: #666;" id="image-${index}-time">-</div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function createResourceItem(resource, id) {
+            const item = document.createElement('div');
+            item.className = 'resource-item';
+            item.id = id;
+            item.innerHTML = `
+                <div>
+                    <strong>${resource.name}</strong><br>
+                    <small>${resource.size}</small>
+                </div>
+                <div style="text-align: right;">
+                    <div class="status-indicator" id="${id}-status"></div>
+                    <div style="font-size: 0.8rem; margin-top: 0.25rem;" id="${id}-time">-</div>
+                </div>
+            `;
+            return item;
+        }
+
+        async function startComprehensiveTest() {
+            if (testState.isRunning) return;
+            
+            resetTestState();
+            testState.isRunning = true;
+            testState.startTime = performance.now();
+            
+            updateButtonStates(true);
+            
+            // Load all resources simultaneously (multiplexing test)
+            const promises = [];
+            
+            // CSS resources
+            testResources.css.forEach((resource, index) => {
+                promises.push(loadResource(resource, `css-${index}`, 'css'));
+            });
+            
+            // JS resources
+            testResources.js.forEach((resource, index) => {
+                promises.push(loadResource(resource, `js-${index}`, 'js'));
+            });
+            
+            // Image resources
+            testResources.images.forEach((resource, index) => {
+                promises.push(loadResource(resource, `image-${index}`, 'image'));
+            });
+            
+            await Promise.allSettled(promises);
+            
+            completeTest();
+        }
+
+        async function runSequentialTest() {
+            if (testState.isRunning) return;
+            
+            resetTestState();
+            testState.isRunning = true;
+            testState.startTime = performance.now();
+            
+            updateButtonStates(true);
+            
+            // Load resources sequentially
+            for (let i = 0; i < testResources.css.length; i++) {
+                await loadResource(testResources.css[i], `css-${i}`, 'css');
+            }
+            
+            for (let i = 0; i < testResources.js.length; i++) {
+                await loadResource(testResources.js[i], `js-${i}`, 'js');
+            }
+            
+            for (let i = 0; i < testResources.images.length; i++) {
+                await loadResource(testResources.images[i], `image-${i}`, 'image');
+            }
+            
+            completeTest();
+        }
+
+        async function loadResource(resource, elementId, type) {
+            const startTime = performance.now();
+            const statusElement = document.getElementById(`${elementId}-status`);
+            const timeElement = document.getElementById(`${elementId}-time`);
+            
+            statusElement.className = 'status-indicator status-loading';
+            
+            try {
+                let result;
+                const url = resource.url + '?t=' + Date.now();
+                
+                if (type === 'css') {
+                    result = await loadCSS(url);
+                } else if (type === 'js') {
+                    result = await loadJS(url);
+                } else if (type === 'image') {
+                    result = await loadImage(url, elementId);
+                }
+                
+                const loadTime = performance.now() - startTime;
+                testState.loadTimes.push({ resource: resource.name, type, loadTime });
+                testState.loadedResources++;
+                
+                statusElement.className = 'status-indicator status-loaded';
+                timeElement.textContent = Math.round(loadTime) + 'ms';
+                
+                updateStats();
+                updateProgress();
+                
+                return { success: true, loadTime };
+                
+            } catch (error) {
+                statusElement.className = 'status-indicator status-error';
+                timeElement.textContent = 'Error';
+                testState.loadedResources++;
+                
+                updateStats();
+                updateProgress();
+                
+                return { success: false, error };
+            }
+        }
+
+        function loadCSS(url) {
+            return new Promise((resolve, reject) => {
+                const link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = url;
+                link.onload = resolve;
+                link.onerror = reject;
+                document.head.appendChild(link);
+            });
+        }
+
+        function loadJS(url) {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = url;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        function loadImage(url, elementId) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    // Display the image in the gallery
+                    const container = document.getElementById(elementId);
+                    const existingImg = container.querySelector('img');
+                    if (existingImg) {
+                        existingImg.remove();
+                    }
+                    
+                    const imgElement = img.cloneNode();
+                    imgElement.style.maxWidth = '60px';
+                    imgElement.style.height = 'auto';
+                    container.insertBefore(imgElement, container.firstChild);
+                    
+                    resolve();
+                };
+                img.onerror = reject;
+                img.src = url;
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('loadedResources').textContent = testState.loadedResources;
+            
+            if (testState.loadTimes.length > 0) {
+                const avgTime = testState.loadTimes.reduce((sum, item) => sum + item.loadTime, 0) / testState.loadTimes.length;
+                document.getElementById('avgTime').textContent = Math.round(avgTime) + 'ms';
+                
+                const efficiency = Math.max(0, 100 - (avgTime / 10)); // Simple efficiency calculation
+                document.getElementById('efficiency').textContent = Math.round(efficiency) + '%';
+            }
+            
+            if (testState.startTime > 0) {
+                const totalTime = performance.now() - testState.startTime;
+                document.getElementById('totalTime').textContent = Math.round(totalTime) + 'ms';
+            }
+        }
+
+        function updateProgress() {
+            const progress = (testState.loadedResources / testState.totalResources) * 100;
+            document.getElementById('overallProgress').style.width = progress + '%';
+            document.getElementById('progressText').textContent = Math.round(progress) + '%';
+        }
+
+        function completeTest() {
+            testState.isRunning = false;
+            updateButtonStates(false);
+            generateAnalysis();
+            
+            const totalTime = performance.now() - testState.startTime;
+            
+            // Signal completion to parent frame
+            if (window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'pageLoaded',
+                    testType: 'comprehensive',
+                    loadTime: totalTime,
+                    resourceCount: testState.totalResources,
+                    loadedCount: testState.loadedResources,
+                    avgResourceTime: testState.loadTimes.reduce((sum, item) => sum + item.loadTime, 0) / testState.loadTimes.length,
+                    resourceBreakdown: {
+                        css: testState.loadTimes.filter(item => item.type === 'css'),
+                        js: testState.loadTimes.filter(item => item.type === 'js'),
+                        images: testState.loadTimes.filter(item => item.type === 'image')
+                    },
+                    url: location.href
+                }, '*');
+            }
+        }
+
+        function generateAnalysis() {
+            const cssItems = testState.loadTimes.filter(item => item.type === 'css');
+            const jsItems = testState.loadTimes.filter(item => item.type === 'js');
+            const imageItems = testState.loadTimes.filter(item => item.type === 'image');
+            
+            const avgCSS = cssItems.reduce((sum, item) => sum + item.loadTime, 0) / cssItems.length;
+            const avgJS = jsItems.reduce((sum, item) => sum + item.loadTime, 0) / jsItems.length;
+            const avgImages = imageItems.reduce((sum, item) => sum + item.loadTime, 0) / imageItems.length;
+            
+            const totalTime = performance.now() - testState.startTime;
+            const avgResourceTime = testState.loadTimes.reduce((sum, item) => sum + item.loadTime, 0) / testState.loadTimes.length;
+            
+            const analysis = `
+                <h3>Performance Analysis Results</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <div>
+                        <h4>Resource Type Performance</h4>
+                        <p><strong>CSS Average:</strong> ${Math.round(avgCSS)}ms</p>
+                        <p><strong>JavaScript Average:</strong> ${Math.round(avgJS)}ms</p>
+                        <p><strong>Images Average:</strong> ${Math.round(avgImages)}ms</p>
+                    </div>
+                    <div>
+                        <h4>Overall Metrics</h4>
+                        <p><strong>Total Load Time:</strong> ${Math.round(totalTime)}ms</p>
+                        <p><strong>Resources Loaded:</strong> ${testState.loadedResources}/${testState.totalResources}</p>
+                        <p><strong>Success Rate:</strong> ${Math.round((testState.loadedResources / testState.totalResources) * 100)}%</p>
+                    </div>
+                    <div>
+                        <h4>Efficiency Metrics</h4>
+                        <p><strong>Avg per Resource:</strong> ${Math.round(avgResourceTime)}ms</p>
+                        <p><strong>Multiplexing Benefit:</strong> ${totalTime < (avgResourceTime * testState.totalResources) ? 'Yes' : 'Limited'}</p>
+                        <p><strong>Protocol Efficiency:</strong> ${Math.round(Math.max(0, 100 - (avgResourceTime / 10)))}%</p>
+                    </div>
+                </div>
+                
+                <h4>Detailed Resource Times</h4>
+                <div style="max-height: 200px; overflow-y: auto; background: #f8f9fa; padding: 1rem; border-radius: 4px;">
+                    ${testState.loadTimes.map(item => 
+                        `<div>${item.resource} (${item.type}): ${Math.round(item.loadTime)}ms</div>`
+                    ).join('')}
+                </div>
+            `;
+            
+            document.getElementById('testAnalysis').innerHTML = analysis;
+            
+            // Update performance metrics
+            const metricsHtml = `
+                <h4>Real-time Metrics</h4>
+                <p><strong>Fastest Resource:</strong> ${Math.round(Math.min(...testState.loadTimes.map(item => item.loadTime)))}ms</p>
+                <p><strong>Slowest Resource:</strong> ${Math.round(Math.max(...testState.loadTimes.map(item => item.loadTime)))}ms</p>
+                <p><strong>Standard Deviation:</strong> ${Math.round(calculateStandardDeviation(testState.loadTimes.map(item => item.loadTime)))}ms</p>
+                <p><strong>Multiplexing Efficiency:</strong> ${Math.round((1 - (totalTime / (avgResourceTime * testState.totalResources))) * 100)}%</p>
+            `;
+            
+            document.getElementById('performanceMetrics').innerHTML = metricsHtml;
+        }
+
+        function calculateStandardDeviation(values) {
+            const avg = values.reduce((sum, val) => sum + val, 0) / values.length;
+            const squareDiffs = values.map(val => Math.pow(val - avg, 2));
+            const avgSquareDiff = squareDiffs.reduce((sum, val) => sum + val, 0) / squareDiffs.length;
+            return Math.sqrt(avgSquareDiff);
+        }
+
+        function resetTest() {
+            resetTestState();
+            updateButtonStates(false);
+            
+            // Reset all status indicators
+            const statusElements = document.querySelectorAll('.status-indicator');
+            statusElements.forEach(el => el.className = 'status-indicator');
+            
+            const timeElements = document.querySelectorAll('[id$="-time"]');
+            timeElements.forEach(el => el.textContent = '-');
+            
+            // Remove loaded images
+            const imageContainers = document.querySelectorAll('.image-item');
+            imageContainers.forEach(container => {
+                const img = container.querySelector('img');
+                if (img) img.remove();
+            });
+            
+            document.getElementById('testAnalysis').innerHTML = '<p>Complete a test to see analysis...</p>';
+            document.getElementById('performanceMetrics').innerHTML = '<p>Start a test to see detailed metrics...</p>';
+            
+            updateStats();
+            updateProgress();
+        }
+
+        function resetTestState() {
+            testState = {
+                totalResources: testState.totalResources,
+                loadedResources: 0,
+                startTime: 0,
+                loadTimes: [],
+                isRunning: false
+            };
+        }
+
+        function updateButtonStates(isRunning) {
+            document.getElementById('startBtn').disabled = isRunning;
+            document.getElementById('sequentialBtn').disabled = isRunning;
+            document.getElementById('resetBtn').disabled = isRunning;
+        }
+
+        // Initialize when page loads
+        window.addEventListener('load', function() {
+            initializeTest();
+        });
+    </script>
+</body>
+</html>

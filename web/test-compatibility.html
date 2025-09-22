@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compatibility Test - HTTP/2 vs HTTP/3 Demo</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .test-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+        }
+        
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0.25rem;
+        }
+        
+        .test-button:hover {
+            background: #0056b3;
+        }
+        
+        .test-result {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>Compatibility Test Page</h1>
+        <div class="browser-compatibility" id="browserCompatibility">
+            <span class="compatibility-indicator" id="compatibilityIndicator"></span>
+            <span class="compatibility-text" id="compatibilityText"></span>
+        </div>
+    </header>
+
+    <div class="test-container">
+        <div class="test-section">
+            <h3>Browser Detection Test</h3>
+            <button class="test-button" onclick="testBrowserDetection()">Test Browser Detection</button>
+            <div id="browserResult" class="test-result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Protocol Support Test</h3>
+            <button class="test-button" onclick="testProtocolSupport()">Test Protocol Support</button>
+            <div id="protocolResult" class="test-result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Fallback Mechanism Test</h3>
+            <button class="test-button" onclick="testFallbackMechanism()">Test Fallback</button>
+            <button class="test-button" onclick="forceFallback()">Force Fallback Mode</button>
+            <button class="test-button" onclick="disableFallback()">Disable Fallback</button>
+            <div id="fallbackResult" class="test-result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Notification Test</h3>
+            <button class="test-button" onclick="testNotifications()">Test Notifications</button>
+            <button class="test-button" onclick="showFirefoxInstructions()">Show Firefox Instructions</button>
+            <button class="test-button" onclick="showCompatibilityWarning()">Show Warning</button>
+        </div>
+
+        <div class="test-section">
+            <h3>UI Adjustment Test</h3>
+            <button class="test-button" onclick="testUIAdjustments()">Test UI Adjustments</button>
+            <div id="uiResult" class="test-result" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Full Compatibility Status</h3>
+            <button class="test-button" onclick="showFullStatus()">Show Full Status</button>
+            <div id="statusResult" class="test-result" style="display: none;"></div>
+        </div>
+    </div>
+
+    <!-- Mock protocol sections for testing -->
+    <div style="display: none;">
+        <div class="protocol-section">
+            <h3>HTTP/2 Test Section</h3>
+        </div>
+        <div class="protocol-section">
+            <h3>HTTP/3 Test Section</h3>
+        </div>
+    </div>
+
+    <script src="js/compatibility.js"></script>
+    <script>
+        // Test functions
+        function testBrowserDetection() {
+            const result = document.getElementById('browserResult');
+            const checker = window.compatibilityChecker;
+            
+            if (checker) {
+                const info = checker.getBrowserInfo();
+                result.innerHTML = `
+                    <strong>Browser Info:</strong><br>
+                    Browser: ${info.browser}<br>
+                    Version: ${info.version}<br>
+                    User Agent: ${navigator.userAgent}
+                `;
+                result.style.display = 'block';
+            } else {
+                result.innerHTML = 'Compatibility checker not initialized';
+                result.style.display = 'block';
+            }
+        }
+
+        function testProtocolSupport() {
+            const result = document.getElementById('protocolResult');
+            const checker = window.compatibilityChecker;
+            
+            if (checker) {
+                const summary = checker.getCompatibilitySummary();
+                result.innerHTML = `
+                    <strong>Protocol Support:</strong><br>
+                    HTTP/2: ${summary.http2Support}<br>
+                    HTTP/3: ${summary.http3Support}<br>
+                    QUIC: ${summary.quicSupport}<br>
+                    <br>
+                    <strong>Detailed HTTP/3:</strong><br>
+                    ${JSON.stringify(checker.getProtocolSupportDetails('http3'), null, 2)}
+                `;
+                result.style.display = 'block';
+            } else {
+                result.innerHTML = 'Compatibility checker not initialized';
+                result.style.display = 'block';
+            }
+        }
+
+        function testFallbackMechanism() {
+            const result = document.getElementById('fallbackResult');
+            const checker = window.compatibilityChecker;
+            
+            if (checker) {
+                const status = checker.getCompatibilityStatus();
+                result.innerHTML = `
+                    <strong>Fallback Status:</strong><br>
+                    Fallback Active: ${status.fallbackActive}<br>
+                    Original Fetch Overridden: ${!!checker.originalFetch}<br>
+                    Iframe Observer Active: ${!!checker.iframeObserver}
+                `;
+                result.style.display = 'block';
+            } else {
+                result.innerHTML = 'Compatibility checker not initialized';
+                result.style.display = 'block';
+            }
+        }
+
+        function forceFallback() {
+            const checker = window.compatibilityChecker;
+            if (checker) {
+                checker.forceFallbackMode();
+                testFallbackMechanism();
+            }
+        }
+
+        function disableFallback() {
+            const checker = window.compatibilityChecker;
+            if (checker) {
+                checker.disableFallbackMode();
+                testFallbackMechanism();
+            }
+        }
+
+        function testNotifications() {
+            const checker = window.compatibilityChecker;
+            if (checker) {
+                checker.showNotification(
+                    'This is a test notification with <strong>HTML content</strong>',
+                    'info',
+                    5000
+                );
+            }
+        }
+
+        function showFirefoxInstructions() {
+            const checker = window.compatibilityChecker;
+            if (checker) {
+                checker.showFirefoxHTTP3Instructions();
+            }
+        }
+
+        function showCompatibilityWarning() {
+            const checker = window.compatibilityChecker;
+            if (checker) {
+                checker.showLimitedHTTP3Warning();
+            }
+        }
+
+        function testUIAdjustments() {
+            const result = document.getElementById('uiResult');
+            const checker = window.compatibilityChecker;
+            
+            if (checker) {
+                // Apply UI adjustments
+                checker.applyProtocolUIAdjustments();
+                
+                // Check what was applied
+                const http3Section = document.querySelector('.protocol-section:nth-child(2)');
+                const classes = http3Section ? Array.from(http3Section.classList) : [];
+                
+                result.innerHTML = `
+                    <strong>UI Adjustments Applied:</strong><br>
+                    HTTP/3 Section Classes: ${classes.join(', ') || 'none'}<br>
+                    Fallback Badge Present: ${!!document.querySelector('.fallback-badge')}<br>
+                    Compatibility Notice Present: ${!!document.querySelector('.compatibility-notice')}
+                `;
+                result.style.display = 'block';
+            } else {
+                result.innerHTML = 'Compatibility checker not initialized';
+                result.style.display = 'block';
+            }
+        }
+
+        function showFullStatus() {
+            const result = document.getElementById('statusResult');
+            const checker = window.compatibilityChecker;
+            
+            if (checker) {
+                const status = checker.getCompatibilityStatus();
+                result.innerHTML = `<pre>${JSON.stringify(status, null, 2)}</pre>`;
+                result.style.display = 'block';
+            } else {
+                result.innerHTML = 'Compatibility checker not initialized';
+                result.style.display = 'block';
+            }
+        }
+
+        // Auto-run basic tests when page loads
+        window.addEventListener('compatibilityChecked', () => {
+            console.log('Compatibility check completed, running basic tests...');
+            testBrowserDetection();
+            testProtocolSupport();
+        });
+    </script>
+</body>
+</html>

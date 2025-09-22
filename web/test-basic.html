@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Basic Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: linear-gradient(45deg, #f0f0f0, #e0e0e0);
+        }
+        .test-content {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .protocol-info {
+            background: #e7f3ff;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-content">
+        <h1>Basic Performance Test Page</h1>
+        <p>This is a simple test page designed to measure basic loading performance between HTTP/2 and HTTP/3.</p>
+        
+        <div class="protocol-info">
+            <h3>Test Information</h3>
+            <p><strong>Protocol:</strong> <span id="protocol">Detecting...</span></p>
+            <p><strong>Load Time:</strong> <span id="loadTime">Measuring...</span></p>
+            <p><strong>Resources:</strong> Minimal (HTML + inline CSS)</p>
+        </div>
+
+        <h2>Content Section</h2>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
+        
+        <ul>
+            <li>Simple HTML structure</li>
+            <li>Inline CSS styling</li>
+            <li>Minimal JavaScript</li>
+            <li>Fast loading baseline</li>
+        </ul>
+
+        <p>This test helps establish a baseline for comparing protocol performance with minimal overhead.</p>
+    </div>
+
+    <script>
+        // Simple performance measurement
+        window.addEventListener('load', function() {
+            const loadTime = performance.now();
+            document.getElementById('loadTime').textContent = Math.round(loadTime) + 'ms';
+            
+            // Try to detect protocol (limited detection possible)
+            const protocol = location.protocol === 'https:' ? 'HTTPS' : 'HTTP';
+            document.getElementById('protocol').textContent = protocol;
+            
+            // Signal that page is loaded (for parent frame)
+            if (window.parent !== window) {
+                window.parent.postMessage({
+                    type: 'pageLoaded',
+                    loadTime: loadTime,
+                    url: location.href
+                }, '*');
+            }
+        });
+    </script>
+</body>
+</html>
