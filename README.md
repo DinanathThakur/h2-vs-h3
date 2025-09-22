@@ -115,8 +115,6 @@ docker-compose up --build
 │   ├── monitor.sh              # Health monitoring
 │   └── *.sh                    # Supporting scripts
 ├── certs/                      # SSL certificates
-└── .kiro/                      # Development specifications
-    └── specs/h2-vs-h3-demo/    # Project specifications
 ```
 
 ## 🔧 Installation & Setup
